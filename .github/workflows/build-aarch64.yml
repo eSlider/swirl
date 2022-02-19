@@ -1,0 +1,39 @@
+name: build-aarch64
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+        
+    - name: Use Node.js 
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.10
+        cache: 'npm'
+
+    - name: enable corepak
+      run: corepack enable
+
+    - name: build
+      run: cd ui && yarn && yarn build && cd ..
+    
+    - name: build 2
+      run: GOOS=linux GOARCH=arm64 go build
+    
+    - name: upload build
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        path: swirl
