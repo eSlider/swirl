@@ -18,21 +18,23 @@ services:
     restart: unless-stopped
     networks:
       - net
-#    expose:
-#      - "27017"
+  #    expose:
+  #      - "27017"
   swirl:
     depends_on:
       - mongodb
     links:
       - mongodb
-#    image: cuigh/swirl
+      - manager_agent
+      - worker_agent
+    #    image: cuigh/swirl
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       DB_ADDRESS: mongodb://admin:super-secret-password@mongodb:27017/swirl?retryWrites=true&w=majority&authSource=admin&ssl=false
-      DOCKER_ENDPOINT: tcp://swirl_manager_agent:2375
-      AGENTS: swirl_manager_agent,swirl_worker_agent
+      DOCKER_ENDPOINT: tcp://manager_agent:2375
+      AGENTS: manager_agent,worker_agent
     networks:
       - net
     ports:
@@ -45,6 +47,8 @@ services:
         constraints: [ node.role == worker ]
   manager_agent:
     image: cuigh/socat
+    links:
+      - worker_agent
     networks:
       - net
     volumes:
@@ -112,6 +116,6 @@ services:
 #    external: true
 
 networks:
-#  host:
-#    external: true
+  #  host:
+  #    external: true
   net:
