@@ -1,0 +1,117 @@
+version: '3.8'
+services:
+  mongodb:
+    hostname: mongodb
+    domainname: mongodb
+    container_name: mongodb
+    image: mongo:3.6
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MONGO_INITDB_DATABASE=swirl
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=super-secret-password
+    volumes:
+      - ./data/mongodb:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    networks:
+      - net
+#    expose:
+#      - "27017"
+  swirl:
+    depends_on:
+      - mongodb
+    links:
+      - mongodb
+#    image: cuigh/swirl
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_ADDRESS: mongodb://admin:super-secret-password@mongodb:27017/swirl?retryWrites=true&w=majority&authSource=admin&ssl=false
+      DOCKER_ENDPOINT: tcp://swirl_manager_agent:2375
+      AGENTS: swirl_manager_agent,swirl_worker_agent
+    networks:
+      - net
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./config:/app/config
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [ node.role == worker ]
+  manager_agent:
+    image: cuigh/socat
+    networks:
+      - net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      placement:
+        constraints: [ node.role == manager ]
+  worker_agent:
+    image: cuigh/socat
+    networks:
+      - net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: global
+      placement:
+        constraints: [ node.role == worker ]
+
+#  prometheus:
+#    image: prom/prometheus
+#    networks:
+#      - net
+#    volumes:
+#      - prometheus:/prometheus
+#    configs:
+#      - source: prometheus.yml
+#        target: /etc/prometheus/prometheus.yml
+#    deploy:
+#      replicas: 1
+#      placement:
+#        constraints: [ node.labels.app.prometheus == true ]
+
+#  cadvisor:
+#    image: gcr.io/cadvisor/cadvisor
+#    networks:
+#      - net
+#    volumes:
+#      - /:/rootfs:ro
+#      - /dev/disk/:/dev/disk:ro
+#      - /sys:/sys:ro
+#      - /var/run:/var/run:ro
+#      - /var/lib/docker:/var/lib/docker:ro
+#    privileged: true
+#    deploy:
+#      mode: global
+#
+#  node:
+#    image: quay.io/prometheus/node-exporter
+#    command:
+#      - '--path.rootfs=/host'
+#    networks:
+#      - host
+#    pid: host
+#    volumes:
+#      - /:/host:ro,rslave
+#    deploy:
+#      mode: global
+
+#volumes:
+#  prometheus:
+
+#configs:
+#  prometheus.yml:
+#    external: true
+
+networks:
+#  host:
+#    external: true
+  net:

@@ -21,3 +21,6 @@ node_modules
 dist
 dist-ssr
 *.local
+
+# MongoDB files
+/data/mongodb/

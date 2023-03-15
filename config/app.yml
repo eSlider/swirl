@@ -8,7 +8,8 @@ web:
 
 swirl:
   db_type: mongo
-  db_address: mongodb://localhost:27017/swirl
+  db_address: mongodb://admin:super-secret-password@mongodb:27017/swirl?retryWrites=true&w=majority&authSource=admin&ssl=false
+
 #  token_key: 80fe9a6d5c6d5dd39f27cd37a77faf8a
 #  token_expiry: 30m
 #  docker_api_version: '1.41'
@@ -22,3 +23,11 @@ log:
   - name: console
     type: console
     layout: '[{L}]{T}: {M}{N}'
+
+cache:
+  - provider: memory
+    enabled: true
+    error: log
+    time: 10m
+    keys:
+      auth_user: 3m
